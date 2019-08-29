@@ -42,7 +42,7 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	iTrue := true
 	iFalse := false
 
-	agent, err := utils.GetAgent(client, "DHCP agent", "neutron-network-agent-b-0")
+	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Agent not found: %s", err.Error())
 		os.Exit(0)
