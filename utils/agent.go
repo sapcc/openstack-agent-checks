@@ -7,10 +7,11 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents"
 )
 
+// GetAgent get a specific neutron agent for agentType and host
 func GetAgent(client *gophercloud.ServiceClient, agentType string, host string) (*agents.Agent, error) {
 	listOpts := agents.ListOpts{
-		AgentType: "Linux bridge agent",
-		Host:      "neutron-network-agent-b-0",
+		AgentType: agentType,
+		Host:      host,
 	}
 	allPages, err := agents.List(client, listOpts).AllPages()
 	if err != nil {
@@ -23,7 +24,7 @@ func GetAgent(client *gophercloud.ServiceClient, agentType string, host string) 
 	}
 
 	if len(allAgents) != 1 {
-		return nil, fmt.Errorf("Agents found inconclusive: %d", len(allAgents))
+		return nil, fmt.Errorf("%d Agents found for host=%s, agentType=%s", len(allAgents), host, agentType)
 	}
 	return &allAgents[0], nil
 }
