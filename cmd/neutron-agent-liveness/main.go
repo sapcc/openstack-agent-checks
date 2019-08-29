@@ -59,6 +59,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	agentType := cfg.Section("Default").Key("agent-type").String()
+	agentType := cfg.Section("DEFAULT").Key("agent-type").String()
 	neutronAgentLiveness(networkClient, host, agentType)
 }
