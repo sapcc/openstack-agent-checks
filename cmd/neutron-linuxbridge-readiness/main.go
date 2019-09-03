@@ -60,16 +60,14 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	portsSynced := 0
 	for _, port := range portList {
 		target := port.ID[:11]
 		i := sort.Search(len(taps), func(i int) bool { return taps[i] >= target })
 		// Ignore reserved dhcp ports
 		if i < len(taps) && taps[i] == target || port.DeviceID == "reserved_dhcp_port" {
-			portsSynced++
 			continue
 		} else {
-			log.Fatalf("%d/%d synced, missing port %s", portsSynced, len(portList), port.ID)
+			log.Fatalf("%d/%d synced, missing port %s", len(taps), len(portList), port.ID)
 		}
 	}
 
