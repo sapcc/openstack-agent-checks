@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
@@ -25,7 +26,6 @@ func (opts portsHostListOpts) ToPortListQuery() (string, error) {
 }
 
 func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
-
 	ifPath := "/sys/class/net"
 	files, err := ioutil.ReadDir(ifPath)
 	if err != nil {
@@ -33,14 +33,14 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	i := 0
+	var taps []string
 	for _, f := range files {
-		if strings.HasPrefix("bond", f.Name()) {
-			i++
+		if strings.HasPrefix(f.Name(), "tap") {
+			taps = append(taps, f.Name()[3:])
 		}
 	}
 
-	portListOpts := portsHostListOpts{}
+	portListOpts := portsHostListOpts{HostID: host}
 
 	pager := ports.List(client, portListOpts)
 	allPages, err := pager.AllPages()
@@ -60,8 +60,17 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	if i < len(portList) {
-		log.Fatalf(" %d/%d synced", i, len(portList))
+	portsSynced := 0
+	for _, port := range portList {
+		target := port.ID[:11]
+		i := sort.Search(len(taps), func(i int) bool { return taps[i] >= target })
+		// Ignore reserved dhcp ports
+		if i < len(taps) && taps[i] == target || port.DeviceID == "reserved_dhcp_port" {
+			portsSynced++
+			continue
+		} else {
+			log.Fatalf("%d/%d synced, missing port %s", portsSynced, len(portList), port.ID)
+		}
 	}
 
 	os.Exit(0)
