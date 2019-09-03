@@ -34,5 +34,9 @@
   name = "github.com/gophercloud/utils"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/gophercloud/gophercloud"
+
+[[constraint]]
   name = "gopkg.in/ini.v1"
   version = "1.46.0"

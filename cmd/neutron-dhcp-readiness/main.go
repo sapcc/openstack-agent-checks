@@ -10,6 +10,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
@@ -25,6 +26,7 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 	for _, network := range agentNetworks {
 		found := false
 		for _, f := range files {
+			// Skip external Networks
 			if "qdhcp-"+network.ID == f.Name() {
 				found = true
 			}
@@ -40,7 +42,6 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 
 func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	iTrue := true
-	iFalse := false
 
 	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
@@ -53,25 +54,16 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	// Filter out networks marked external
-	netListOpts := external.ListOptsExt{
-		ListOptsBuilder: networks.ListOpts{AdminStateUp: &iTrue},
-		External:        &iFalse,
-	}
-	pager := networks.List(client, netListOpts)
-	allPages, err := pager.AllPages()
-	if err != nil {
-		log.Fatalf("Failed fetching all networks: %s", err)
+	dhcpNetworksResult := agents.ListDHCPNetworks(client, agent.ID)
+	var networkList []networkWithExternalExt
+	if err := dhcpNetworksResult.ExtractIntoSlicePtr(&networkList, "networks"); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed fetching network from agent %s: %s",
+			agent.Host, err.Error())
 		os.Exit(0)
 	}
 
-	var networkList []networkWithExternalExt
-	if err := networks.ExtractNetworksInto(allPages, &networkList); err != nil {
-		log.Fatalf("Failed extracting all networks: %s", err)
-	}
-
 	if float64(len(networkList)) <= agent.Configurations["networks"].(float64) {
-		// We have more/equal networks synced that scheduled
+		// We have more or qual num of networks synced
 		os.Exit(0)
 	}
 
@@ -85,6 +77,7 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 
 	// Check if missing network have subnets with dhcp-enabled
 	missingNetworks := getNetworksMissing(files, networkList)
+
 	for _, missingNetwork := range missingNetworks {
 		listOpts := subnets.ListOpts{
 			EnableDHCP: &iTrue,
