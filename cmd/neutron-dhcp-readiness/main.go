@@ -86,15 +86,15 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 		pager := subnets.List(client, listOpts)
 		page, err := pager.AllPages()
 		if err != nil {
-			log.Fatalf(" Failed fetching all subnets: %s", err)
+			log.Fatalf("Failed fetching all subnets: %s", err)
 		}
 		subnetList, err := subnets.ExtractSubnets(page)
 		if err != nil {
-			log.Fatalf(" Failed extracting all subnets: %s", err)
+			log.Fatalf("Failed extracting all subnets: %s", err)
 		}
 
 		if len(subnetList) > 0 {
-			log.Fatalf(" %d/%d synced, internal network '%s' not synced",
+			log.Fatalf("DHCP: %d/%d synced, internal network '%s' not synced",
 				len(files), len(networkList), missingNetwork)
 		}
 	}

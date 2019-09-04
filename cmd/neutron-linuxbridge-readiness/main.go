@@ -67,7 +67,7 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		if i < len(taps) && taps[i] == target || port.DeviceID == "reserved_dhcp_port" {
 			continue
 		} else {
-			log.Fatalf("%d/%d synced, missing port %s", len(taps), len(portList), port.ID)
+			log.Fatalf("LinuxBridge: %d/%d synced, missing port %s", len(taps), len(portList), port.ID)
 		}
 	}
 
