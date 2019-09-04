@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/sapcc/openstack-agent-checks/utils"
@@ -72,7 +71,8 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	netnsPath := "/run/netns"
 	files, err := ioutil.ReadDir(netnsPath)
 	if err != nil {
-		log.Fatalf("Failed reading from network namespaces: %s", err)
+		fmt.Fprintf(os.Stderr, "Failed reading from network namespaces: %s", err)
+		os.Exit(1)
 	}
 
 	// Check if missing network have subnets with dhcp-enabled
@@ -86,16 +86,19 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 		pager := subnets.List(client, listOpts)
 		page, err := pager.AllPages()
 		if err != nil {
-			log.Fatalf("Failed fetching all subnets: %s", err)
+			fmt.Fprintf(os.Stderr, "Failed fetching all subnets: %s", err)
+			os.Exit(1)
 		}
 		subnetList, err := subnets.ExtractSubnets(page)
 		if err != nil {
-			log.Fatalf("Failed extracting all subnets: %s", err)
+			fmt.Fprintf(os.Stderr, "Failed extracting all subnets: %s", err)
+			os.Exit(1)
 		}
 
 		if len(subnetList) > 0 {
-			log.Fatalf("DHCP: %d/%d synced, internal network '%s' not synced",
+			fmt.Fprintf(os.Stderr, "DHCP: %d/%d synced, internal network '%s' not synced",
 				len(files), len(networkList), missingNetwork)
+			os.Exit(1)
 		}
 	}
 

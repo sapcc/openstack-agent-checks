@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -67,7 +66,8 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		if i < len(taps) && taps[i] == target || port.DeviceID == "reserved_dhcp_port" {
 			continue
 		} else {
-			log.Fatalf("LinuxBridge: %d/%d synced, missing port %s", len(taps), len(portList), port.ID)
+			fmt.Fprintf(os.Stderr, "LinuxBridge: %d/%d synced, missing port %s", len(taps), len(portList), port.ID)
+			os.Exit(1)
 		}
 	}
 
