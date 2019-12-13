@@ -3,7 +3,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f34f6360c17a897b8fbbcd7bea80eb0cfd23feffaee35f50571f77c3bd2d23e4"
+  digest = "1:8dd75b691c168fd575a3434fc7b04ced18b2c5b9677f22a2ee085b20034ef562"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -13,9 +13,7 @@
     "openstack/identity/v3/tokens",
     "openstack/networking/v2/extensions/agents",
     "openstack/networking/v2/extensions/external",
-    "openstack/networking/v2/extensions/portsbinding",
     "openstack/networking/v2/networks",
-    "openstack/networking/v2/ports",
     "openstack/networking/v2/subnets",
     "openstack/utils",
     "pagination",
@@ -55,9 +53,7 @@
     "github.com/gophercloud/gophercloud/openstack",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external",
-    "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/portsbinding",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/networks",
-    "github.com/gophercloud/gophercloud/openstack/networking/v2/ports",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets",
     "github.com/gophercloud/utils/openstack/clientconfig",
     "gopkg.in/ini.v1",

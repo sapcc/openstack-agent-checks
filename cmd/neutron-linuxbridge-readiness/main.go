@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -9,22 +12,27 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/portsbinding"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	"github.com/sapcc/openstack-agent-checks/utils"
 )
 
-// Filter ports from this host
-type portsHostListOpts struct {
-	HostID string `q:"binding:host_id"`
+type networkWithExternalExt struct {
+	networks.Network
+	external.NetworkExternalExt
 }
 
-func (opts portsHostListOpts) ToPortListQuery() (string, error) {
-	q, err := gophercloud.BuildQueryString(opts)
-	return q.String(), err
-}
 
 func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
+	agent, err := utils.GetAgent(client, "Linux bridge agent", host)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Agent not found: %s", err.Error())
+		os.Exit(0)
+	}
+
+	if !agent.Alive {
+		fmt.Fprintf(os.Stderr, "Agent down, ignoring network check")
+		os.Exit(0)
+	}
+
 	ifPath := "/sys/class/net"
 	files, err := ioutil.ReadDir(ifPath)
 	if err != nil {
@@ -32,41 +40,31 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	var taps []string
+	var nets []string
 	for _, f := range files {
-		if strings.HasPrefix(f.Name(), "tap") {
-			taps = append(taps, f.Name()[3:])
+		if strings.HasPrefix(f.Name(), "brq") {
+			nets = append(nets, f.Name()[3:])
 		}
 	}
 
-	portListOpts := portsHostListOpts{HostID: host}
-
-	pager := ports.List(client, portListOpts)
-	allPages, err := pager.AllPages()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed fetching all networks: %s", err)
+	dhcpNetworksResult := agents.ListDHCPNetworks(client, agent.ID)
+	var networkList []networkWithExternalExt
+	if err := dhcpNetworksResult.ExtractIntoSlicePtr(&networkList, "networks"); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed fetching network from agent %s: %s",
+			agent.Host, err.Error())
 		os.Exit(0)
 	}
 
-	type PortWithBindingExt struct {
-		ports.Port
-		portsbinding.PortsBindingExt
-	}
 
-	var portList []PortWithBindingExt
-	if err := ports.ExtractPortsInto(allPages, &portList); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed extracting all ports: %s", err)
-		os.Exit(0)
-	}
-
-	for _, port := range portList {
-		target := port.ID[:11]
-		i := sort.Search(len(taps), func(i int) bool { return taps[i] >= target })
-		// Ignore reserved dhcp ports
-		if i < len(taps) && taps[i] == target || port.DeviceID == "reserved_dhcp_port" {
+	for _, network := range networkList {
+		target := network.ID[:11]
+		i := sort.Search(len(nets), func(i int) bool { return nets[i] >= target })
+		// Ignore external
+		if i < len(nets) && nets[i] == target || network.External {
 			continue
 		} else {
-			fmt.Fprintf(os.Stderr, "LinuxBridge: %d/%d synced, missing port %s", len(taps), len(portList), port.ID)
+			fmt.Fprintf(os.Stderr, "LinuxBridge: %d/%d synced, missing network %s", len(nets), len(networkList),
+				network.ID)
 			os.Exit(1)
 		}
 	}
