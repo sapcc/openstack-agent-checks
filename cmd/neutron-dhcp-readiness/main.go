@@ -24,8 +24,11 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 	var missingNetworks []string
 	for _, network := range agentNetworks {
 		found := false
+		// Ignore disabled network or networks without subnets
+		if !network.AdminStateUp || len(network.Subnets) == 0 {
+			continue
+		}
 		for _, f := range files {
-			// Skip external Networks
 			if "qdhcp-"+network.ID == f.Name() {
 				found = true
 			}
