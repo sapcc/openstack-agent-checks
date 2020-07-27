@@ -22,7 +22,8 @@ type networkWithExternalExt struct {
 
 
 func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
-	agent, err := utils.GetAgent(client, "Linux bridge agent", host)
+	// Fetch network scheduled to the dhcp agent on the same host
+	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Agent not found: %s", err.Error())
 		os.Exit(0)
@@ -37,7 +38,7 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 	files, err := ioutil.ReadDir(ifPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, " Failed reading from %s: %s", ifPath, err)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	var nets []string
@@ -60,7 +61,7 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		target := network.ID[:11]
 		i := sort.Search(len(nets), func(i int) bool { return nets[i] >= target })
 		// Ignore external
-		if i < len(nets) && nets[i] == target || network.External {
+		if i < len(nets) && nets[i] == target || network.External || !network.AdminStateUp {
 			continue
 		} else {
 			fmt.Fprintf(os.Stderr, "LinuxBridge: %d/%d synced, missing network %s", len(nets), len(networkList),
