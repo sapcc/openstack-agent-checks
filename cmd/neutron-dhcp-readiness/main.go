@@ -12,7 +12,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/agents"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 )
 
 type networkWithExternalExt struct {
@@ -43,8 +42,6 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 }
 
 func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
-	iTrue := true
-
 	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Agent not found: %s", err.Error())
