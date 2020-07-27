@@ -82,17 +82,7 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	missingNetworks := getNetworksMissing(files, networkList)
 
 	for _, missingNetwork := range missingNetworks {
-		listOpts := subnets.ListOpts{
-			EnableDHCP: &iTrue,
-			NetworkID:  missingNetwork,
-		}
-		pager := subnets.List(client, listOpts)
-		page, err := pager.AllPages()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed fetching all subnets: %s", err)
-			os.Exit(1)
-		}
-		subnetList, err := subnets.ExtractSubnets(page)
+		subnetList, err := utils.GetSubnetsWithDHCPEnabled(client, missingNetwork)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed extracting all subnets: %s", err)
 			os.Exit(1)

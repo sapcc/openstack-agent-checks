@@ -22,6 +22,7 @@ type networkWithExternalExt struct {
 
 
 func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
+
 	// Fetch network scheduled to the dhcp agent on the same host
 	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
@@ -34,7 +35,10 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	ifPath := "/sys/class/net"
+	ifPath, ok := os.LookupEnv("OVERRIDE_IF_PATH")
+	if !ok {
+		ifPath = "/sys/class/net"
+	}
 	files, err := ioutil.ReadDir(ifPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, " Failed reading from %s: %s", ifPath, err)
@@ -53,7 +57,7 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 	if err := dhcpNetworksResult.ExtractIntoSlicePtr(&networkList, "networks"); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed fetching network from agent %s: %s",
 			agent.Host, err.Error())
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 
@@ -64,6 +68,16 @@ func linuxBridgeReadiness(client *gophercloud.ServiceClient, host string) {
 		if i < len(nets) && nets[i] == target || network.External || !network.AdminStateUp {
 			continue
 		} else {
+			subnets, err := utils.GetSubnetsWithDHCPEnabled(client, network.ID)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed fetching subnets for network '%s': %s", network.ID, err)
+				os.Exit(1)
+			}
+
+			if len(subnets) == 0 {
+				// No subnets with dhcp enable, no bridge needed.
+				continue
+			}
 			fmt.Fprintf(os.Stderr, "LinuxBridge: %d/%d synced, missing network %s", len(nets), len(networkList),
 				network.ID)
 			os.Exit(1)
