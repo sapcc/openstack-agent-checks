@@ -45,12 +45,12 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Agent not found: %s", err.Error())
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	if !agent.Alive {
-		fmt.Fprintf(os.Stderr, "Agent down, ignoring network check")
-		os.Exit(0)
+		fmt.Fprintf(os.Stderr, "Agent down from neutron perspective")
+		os.Exit(1)
 	}
 
 	dhcpNetworksResult := agents.ListDHCPNetworks(client, agent.ID)
