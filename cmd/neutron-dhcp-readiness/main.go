@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/sapcc/openstack-agent-checks/utils"
 
@@ -114,6 +115,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Cannot connect to neutron: %s", err.Error())
 		os.Exit(0)
 	}
+
+	networkClient.HTTPClient.Timeout = time.Second * 10
 
 	host, err := utils.GetHost(cfg)
 	if err != nil {
