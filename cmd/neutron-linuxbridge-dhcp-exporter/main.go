@@ -19,6 +19,7 @@ import (
 var (
 	listenAddress  = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9116").String()
 	updateInterval = kingpin.Flag("update-interval", "Interval of checking for new linux bridges").Default("30").Int()
+	metricPrefix   = kingpin.Flag("metric-prefix", "Prefix the metric name").Default("").String()
 	setCurrentTime = kingpin.Flag("set-current-time", "Instead of binary gauges, set the time as timeticks").Default("false").Bool()
 	bridgesPath    = kingpin.Flag("bridges-path", "Virtual filesystem path exposing kernel network interfaces").Default("/sys/class/net").String()
 	netNsPath      = kingpin.Flag("netns-path", "Virtual filesystem path network namespaces").Default("/var/run/netns/").String()
@@ -68,8 +69,10 @@ func main() {
 	}
 
 	reg := prometheus.NewRegistry()
-	bridge_metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "linux_bridge_present", Help: "Indicates if a bridge is present on the agent"}, []string{"hostname", "bridge"})
-	netns_metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "netns_present", Help: "Indicates if a network namespace is present on the agent"}, []string{"hostname", "netns"})
+	bridge_metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: *metricPrefix + "linux_bridge_present", Help: "Indicates if a bridge is present on the agent"},
+		[]string{"hostname", "bridge"})
+	netns_metric := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: *metricPrefix + "netns_present", Help: "Indicates if a network namespace is present on the agent"},
+		[]string{"hostname", "netns"})
 	reg.MustRegister(bridge_metric)
 	reg.MustRegister(netns_metric)
 
