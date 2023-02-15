@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/gophercloud/gophercloud v0.3.1-0.20190902154400-363d7a098dd0
 	github.com/gophercloud/utils v0.0.0-20190829151529-94e6842399e5
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.11.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/ini.v1 v1.46.0
 )
@@ -15,13 +15,13 @@ require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.15.0 // indirect
-	github.com/prometheus/procfs v0.1.3 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/smartystreets/goconvey v1.6.6 // indirect
-	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
-	google.golang.org/protobuf v1.23.0 // indirect
+	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
+	google.golang.org/protobuf v1.26.0-rc.1 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
