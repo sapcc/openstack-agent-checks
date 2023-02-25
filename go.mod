@@ -21,7 +21,7 @@ require (
 	github.com/prometheus/common v0.15.0 // indirect
 	github.com/prometheus/procfs v0.1.3 // indirect
 	github.com/smartystreets/goconvey v1.6.6 // indirect
-	golang.org/x/sys v0.0.0-20200625212154-ddb9806d33ae // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	google.golang.org/protobuf v1.23.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
