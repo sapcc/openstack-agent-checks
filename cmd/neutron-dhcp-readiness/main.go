@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -24,10 +23,6 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 	var missingNetworks []string
 	for _, network := range agentNetworks {
 		found := false
-		// Ignore disabled network or networks without subnets
-		if !network.AdminStateUp || len(network.Subnets) == 0 {
-			continue
-		}
 		for _, f := range files {
 			if "qdhcp-"+network.ID == f.Name() {
 				found = true
@@ -40,6 +35,22 @@ func getNetworksMissing(files []os.FileInfo, agentNetworks []networkWithExternal
 	}
 
 	return missingNetworks
+}
+
+func filterForRelevantNetworks(agentNetworks []networkWithExternalExt) []networkWithExternalExt {
+	var networks []networkWithExternalExt
+	for _, network := range agentNetworks {
+		// Ignore disabled network or networks without subnets
+		if !network.AdminStateUp || len(network.Subnets) == 0 {
+			continue
+		}
+		// Ignore external networks
+		if network.External {
+			continue
+		}
+		networks = append(networks, network)
+	}
+	return networks
 }
 
 func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
@@ -62,19 +73,21 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 		os.Exit(0)
 	}
 
-	if float64(len(networkList)) <= agent.Configurations["networks"].(float64) {
-		// We have more or qual num of networks synced
+	//Exclude external, DHCP disabled, networks
+	networkList = filterForRelevantNetworks(networkList)
+
+	if len(networkList) == 0 {
 		os.Exit(0)
 	}
 
-	// We have more networks scheduled than synced, check if the currently
-	// missing one are non-externals in /run/netns
+	// Check if all networks are present in /run/netns
 	netnsPath := "/run/netns"
-	files, err := ioutil.ReadDir(netnsPath)
+	entries, err := os.ReadDir(netnsPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed reading from network namespaces: %s", err)
 		os.Exit(1)
 	}
+	files := make([]os.FileInfo, 0, len(entries))
 
 	// Check if missing network have subnets with dhcp-enabled
 	missingNetworks := getNetworksMissing(files, networkList)
