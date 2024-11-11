@@ -53,6 +53,23 @@ func filterForRelevantNetworks(agentNetworks []networkWithExternalExt) []network
 	return networks
 }
 
+func checkMissingNetworks(missingNetworks []string, client *gophercloud.ServiceClient) []string {
+	var missing []string
+	for _, missingNetwork := range missingNetworks {
+		subnetList, err := utils.GetSubnetsWithDHCPEnabled(client, missingNetwork)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed extracting all subnets: %s", err)
+			os.Exit(1)
+		}
+
+		if len(subnetList) > 0 {
+			missing = append(missing, missingNetwork)
+		}
+	}
+	return missing
+
+}
+
 func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 	agent, err := utils.GetAgent(client, "DHCP agent", host)
 	if err != nil {
@@ -91,23 +108,15 @@ func dhcpReadiness(client *gophercloud.ServiceClient, host string) {
 
 	// Check if missing network have subnets with dhcp-enabled
 	missingNetworks := getNetworksMissing(files, networkList)
+	missingNetworks = checkMissingNetworks(missingNetworks, client)
 
-	for _, missingNetwork := range missingNetworks {
-		subnetList, err := utils.GetSubnetsWithDHCPEnabled(client, missingNetwork)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed extracting all subnets: %s", err)
-			os.Exit(1)
-		}
-
-		if len(subnetList) > 0 {
-			fmt.Fprintf(os.Stderr, "DHCP: %d/%d synced, internal network '%s' not synced",
-				len(files), len(networkList), missingNetwork)
-			os.Exit(1)
-		}
+	if len(missingNetworks) == 0 {
+		// Everything synced
+		os.Exit(0)
 	}
+	fmt.Fprintf(os.Stderr, "DHCP: %d/%d synced, internal networks '%v' not synced",
+		len(files), len(networkList), missingNetworks)
 
-	// Everything synced
-	os.Exit(0)
 }
 
 func main() {
